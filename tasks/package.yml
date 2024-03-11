@@ -1,0 +1,50 @@
+
+    - name: Setup Pre-requisite
+      ansible.builtin.script:
+        chdir: "/tmp"
+        cmd: "{{ pwd }}/resource/pre-requisite/{{ ansible_os_family }}/{{ item.prerequisite.name  }}.sh {{ item.prerequisite.args }}"
+        creates: "{{ item.prerequisite.skipIfExists  }}"
+      # tags: "{{ item.prerequisite ? 'always' : 'never' }}"
+      when: "item.prerequisite and (item.prerequisite.os == False or ansible_os_family in item.prerequisite.os) and (item.os == False or ansible_os_family in item.os)"
+      with_list: "{{ param }}"
+
+    - name: Install Package
+      package:
+        update_cache: true
+        name: "{{ item.name }}"
+        state: latest
+      when: "item.os == False or ansible_os_family in item.os"
+      with_list:  "{{ param }}"
+
+    - name: Configuration (before start service)
+      ansible.builtin.script:
+        chdir: "/tmp"
+        cmd: "{{ pwd }}/resource/config/{{ ansible_os_family }}/{{ item.config.name  }}.sh {{ item.config.args }}"
+        creates: "{{ item.config.skipIfExists  }}"
+      # tags: "{{ item.prerequisite ? 'always' : 'never' }}"
+      when: "item.config and (item.config.os == False or ansible_os_family in item.config.os) and (item.os == False or ansible_os_family in item.os)"
+      with_list: "{{ param }}"
+
+    - name: Start Service
+      ansible.builtin.systemd_service:
+        name: "{{ item.service }}"
+        enabled: true 
+        state: started
+      when: "item.service != False and (item.os == False or ansible_os_family in item.os)"
+      with_list:  "{{ param }}"
+
+    - name: Finalization (after start service)
+      ansible.builtin.script:
+        chdir: "/tmp"
+        cmd: "{{ pwd }}/resource/config/{{ ansible_os_family }}/{{ item.final.name  }}.sh {{ item.final.args }}"
+        creates: "{{ item.final.skipIfExists  }}"
+      # tags: "{{ item.prerequisite ? 'always' : 'never' }}"
+      when: "item.final and (item.final.os == False or ansible_os_family in item.final.os) and (item.os == False or ansible_os_family in item.os)"
+      with_list: "{{ param }}"
+    # - name: Start Service
+    #   service:
+    #     name: "{{ item.service }}"
+    #     state: started
+    #   when: item.service != False
+    #   # tags: "{{ item.service ? 'always' : 'never' }}"
+    #   with_list:  "{{ param }}"

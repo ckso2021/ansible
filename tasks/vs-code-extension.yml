@@ -1,0 +1,4 @@
+   - name: Install VS Code Extension
+     ansible.builtin.command:
+       cmd: su - {{ user }} -c "code --install-extension {{ item }}"
+     with_list: "{{ param }}"

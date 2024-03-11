@@ -1,0 +1,16 @@
+    - name: Copy script to romote (as user)
+      ansible.builtin.copy:
+        src: "{{ pwd }}/resource/script/{{ ansible_os_family  }}/{{ item.name }}.sh"
+        dest: /tmp/source/{{ item.name }}.sh
+        owner: "{{ user }}"
+        group: root
+        mode: u+rx,g+rx,o-rwx
+      with_list: "{{ param }}"
+
+    - name: Install by script (as user)
+      ansible.builtin.command:
+        cmd: su - {{ user }} -c "sh /tmp/source/{{ item.name }}.sh {{ item.args }}"
+        creates: "{{ item.skipIfExists  }}"
+      # become: true
+      # become_user: root
+      with_list: "{{ param }}"

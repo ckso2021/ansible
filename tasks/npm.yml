@@ -1,0 +1,5 @@
+    - name: Install NPM Global Package
+      ansible.builtin.command:
+        cmd: npm install -g {{ item.name }}
+        creates: "{{ item.skipIfExists  }}"
+      with_list: "{{ param }}"

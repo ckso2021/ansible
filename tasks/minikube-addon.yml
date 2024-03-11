@@ -1,0 +1,14 @@
+    - name: Check Minikube if running
+      ansible.builtin.shell: "minikube status | grep -q 'kubelet: Running' && echo yes || echo no"
+      register: minikubeIsRunning
+    
+    - name: Start Minikube
+      ansible.builtin.command:
+       cmd: su - {{ user }} -c "/usr/local/bin/minikube start"
+      when: "minikubeIsRunning.stdout == 'no'"
+    
+    - name: Install Minikube Addons
+      ansible.builtin.command:
+        cmd: su - {{ user }} -c "/usr/local/bin/minikube addons enable {{ item }}"
+        # creates: "{{ item.skipIfExists  }}"
+      with_list: "{{ param }}"

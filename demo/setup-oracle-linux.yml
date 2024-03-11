@@ -1,0 +1,103 @@
+---
+- name: Development OS Environment Setup
+  hosts: all
+  become: true
+  become_user: root
+  gather_facts: true
+  vars:
+    user: user
+
+  tasks:
+    - name: Set timezone to Asia/Taipei
+      community.general.timezone:
+        name: Asia/Taipei
+
+    - name: Create tmp Directory
+      file: 
+        path: "{{ item }}"
+        recurse: yes
+        state: directory
+      with_list:
+        - /tmp/source/
+
+    - include_tasks: "../tasks/{{ outer_item.yml }}.yml" 
+      # args:
+      #   apply:
+      #     become: true
+      #     tags:
+      #       - always
+      # when: hostvar is defined
+      vars:
+        param: "{{ outer_item.package }}"
+        pwd: "{{ lookup('env', 'PWD') }}"
+
+      with_items:
+          # Pre-requisite
+        - yml: package
+          package:
+            - {name: gnupg, service: false, prerequisite: false, config: false, os: ['Debian']}
+            - {name: curl, service: false, prerequisite: false, config: false, os: ['Debian']}
+            - {name: ca-certificates, service: false, prerequisite: false, config: false, os: ['Debian']}
+            - {name: git, service: false, prerequisite: false, config: false}      
+            - {name: [build-essential, libssl-dev, libffi-dev], service: false, prerequisite: false, config: false}
+          # Generic Package
+        - yml: package
+          package:
+            - {name: [python3, python3-pip, python3-dev], service: false, prerequisite: false, config: false}   
+            - {name: nginx, service: nginx, prerequisite: false, config: false}   
+            - {name: mongodb-org, service: mongod,
+              prerequisite: { name: mongodb, args: 7.0, skipIfExists: "/etc/apt/sources.list.d/mongodb-org-{{ 7.0 }}.list"},
+              config: { name: mongodb, args: "", skipIfExists: "/tmp/ansible-mongodb-config-completed"} }
+            - {name: libfuse2, service: false, prerequisite: false, config: false}     
+            - {name: [docker-ce, docker-ce-cli, containerd.io, docker-buildx-plugin, docker-compose-plugin], service: docker,
+              prerequisite: { name: docker, args: "", skipIfExists: /etc/apt/sources.list.d/docker.list },
+              config: { name: docker, args: "{{ user }}", skipIfExists: "/tmp/ansible-docker-config-completed"} }
+            - {name: mariadb-server, service: mariadb, prerequisite: false, config: false}   
+            - {name: mariadb-client, service: false, prerequisite: false, config: false}   
+            - {name: [kubeadm, kubelet, kubectl], service: kubelet, 
+              prerequisite: { name: kubernetes, args: "", skipIfExists: /etc/apt/sources.list.d/kubernetes.list },
+              config: false}
+              # config: { name: kubernetes, args: "{{ user }}", skipIfExists: /etc/xxx } }
+            # - {name: php, service: false}
+        - yml: script-as-root
+          package:
+            # - {name: jetbrains-toolbox, args: "", skipIfExists: "/opt/jetbrains/jetbrains-toolbox"}
+            - {name: minikube, args: "", skipIfExists: "/usr/local/bin/minikube"}   
+
+        - yml: script-as-user
+          package:
+            - {name: rust, args: "", skipIfExists: "/home/{{ user }}/.cargo/bin/rustup"}
+            - {name: bun, args: "", skipIfExists: "/home/{{ user }}/.bun/bin/bun"}
+        - yml: snap
+          package:
+            - code
+            - go
+            - node
+            - deno
+            - android-studio
+
+        - yml: npm
+          package:
+            - {name: "yarn", args: "", skipIfExists: "/usr/local/bin/yarn"}
+            - {name: "@angular/cli", args: "", skipIfExists: "/usr/local/bin/ng"}
+            
+            
+        # - yml: vs-code-extension
+        #   package:
+        #     - mhutchie.git-graph
+        #     - donjayamanne.githistory
+        #     - GitHub.copilot
+        #     - GitHub.copilot-chat
+        #     - ms-azuretools.vscode-docker
+
+        - yml: minikube-addon
+          package:
+            - dashboard
+            - ingress
+
+        - yml: pip3
+          package:
+            - virtualenv
+            
+      loop_control:
+        loop_var: outer_item

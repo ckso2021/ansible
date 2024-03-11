@@ -1,0 +1,6 @@
+    - name: Install by Script (as root)
+      ansible.builtin.script:
+        chdir: "/tmp"
+        cmd: "{{ pwd }}/resource/script/{{ ansible_os_family }}/{{ item.name  }}.sh {{ item.args }}"
+        creates: "{{ item.skipIfExists  }}"
+      with_list: "{{ param }}"

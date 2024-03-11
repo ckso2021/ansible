@@ -1,0 +1,49 @@
+
+    - name: Create tmp Directory
+      file: 
+        path: "{{ item }}"
+        recurse: yes
+        state: directory
+      with_list:
+        - /opt/docker/file/{{ param.hashFolder }}
+
+    - name: Apply template of Docker file
+      ansible.builtin.template:
+        src: "{{ pwd }}/resource/template/docker/php/Dockerfile"
+        dest: "/opt/docker/file/{{ param.hashFolder }}/Dockerfile"
+        owner: "{{ user }}"
+        group: root
+        mode: u+rx,g+rx,o-rwx
+
+    - name: Build Docker image
+      ansible.builtin.command:
+        cmd: docker build "/opt/docker/file/{{ param.hashFolder }}" -t "{{ param.imageName }}{{ ":v" + param.imageVersion if param.imageVersion else "" }}"
+        creates: "{{ param.skipIfExists  }}"
+    - name: Remove Docker container if exicts
+      ansible.builtin.command:
+        cmd: docker rm --force {{param.name}}
+        creates: "{{ param.skipIfExists  }}"
+
+    - name: Start Docker container
+      ansible.builtin.command:
+        cmd: docker run -d -p {{param.port}}:9000 --name {{param.name}} -v {{param.htmlPath}}:/var/www/html {{param.imageName}}{{ ":v" + param.imageVersion if param.imageVersion else "" }}
+        creates: "{{ param.skipIfExists  }}"
+        
+    - name: Apply template of Nginx config
+      ansible.builtin.template:
+        src: "{{ pwd }}/resource/template/nginx/domain"
+        dest: "/etc/nginx/sites-available/{{param.domainName}}"
+        owner: "{{ user }}"
+        group: root
+        mode: u+rx,g+rx,o-rwx
+
+    - name: Link to nignx site-enabled
+      ansible.builtin.command:
+        cmd: ln -s /etc/nginx/sites-available/{{param.domainName}} /etc/nginx/sites-enabled/
+        creates: "/etc/nginx/sites-enabled/{{param.domainName}}"
+
+    - name: Reload nignx
+      ansible.builtin.command:
+        cmd: service nginx reload
+      # become: true
+      # become_user: root

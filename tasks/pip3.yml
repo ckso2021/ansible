@@ -1,0 +1,5 @@
+    - name: Install Python3 Package
+      ansible.builtin.command:
+        cmd: pip3 install {{ item }}
+        # creates: "{{ item.skipIfExists  }}"
+      with_list: "{{ param }}"

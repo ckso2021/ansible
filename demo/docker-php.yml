@@ -1,0 +1,83 @@
+---
+- name: Development OS Environment Setup
+  hosts: all
+  become: true
+  become_user: root
+  gather_facts: true
+  vars:
+    user: user
+    pwd: "{{ lookup('env', 'PWD') }}"
+  tasks:
+    - name: Set timezone to Asia/Taipei
+      community.general.timezone:
+        name: Asia/Taipei
+
+    - name: Create tmp Directory
+      file: 
+        path: "{{ item }}"
+        recurse: yes
+        state: directory
+      with_list:
+        - /opt/docker/container
+        - /opt/docker/file
+
+    - include_tasks: "../tasks/docker/{{ outer_item.yml }}.yml" 
+      # args:
+      #   apply:
+      #     tags:
+      #       - always
+      # when: hostvar is defined
+      vars:
+        param: "{{ outer_item }}"
+
+      with_items:
+          # Pre-requisite
+        - yml: php
+          name: "fpm8.3-alpine"
+          domainName: "fpm83.localhost"
+          imageName: "custom/fpm8.3-alpine"
+          imageVersion: false
+          # saveTo: /opt/docker/container
+          port: 9083
+          htmlPath: /var/www/html
+          version: 8.3
+          hashFolder: "{{lookup('community.general.random_string', length=12, override_special='0123456789abcdef')}}"
+          skipIfExists: false
+          extension:
+            - gd
+            - pdo_mysql
+            - zip
+          pecl:  
+            - {name: swoole, arg: "", autoreply: "yes", version: 5.1.0}
+            - {name: redis, arg: "", autoreply: "yes", version: false}
+            - {name: mongodb, arg: "", autoreply: "yes",version: false}
+            - {name: inotify, arg: "", autoreply: "yes",version: false}
+          # Generic Package
+          composer:
+            - {name: laravel/installer, arg: "",  version: false}
+
+        - yml: php
+          name: "fpm7.4-alpine"
+          domainName: "fpm74.localhost"
+          imageName: "custom/fpm7.4-alpine"
+          imageVersion: false
+          # saveTo: /opt/docker/container
+          port: 9074
+          htmlPath: /var/www/html
+          version: 7.4
+          hashFolder: "{{lookup('community.general.random_string', length=12, override_special='0123456789abcdef')}}"
+          skipIfExists: false
+          extension:
+            - gd
+            - pdo_mysql
+            - zip
+          pecl:  
+            - {name: swoole, arg: "", autoreply: "yes", version: 4.8.13}
+            - {name: redis, arg: "", autoreply: "yes", version: false}
+            - {name: mongodb, arg: "", autoreply: "yes",version: false}
+            - {name: inotify, arg: "", autoreply: "yes",version: false}
+          # Generic Package
+          composer:
+            - {name: laravel/installer, arg: "",  version: false}      
+      loop_control:
+        loop_var: outer_item

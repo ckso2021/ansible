@@ -1,0 +1,5 @@
+   - name: Install Snap Package
+     community.general.snap:
+       name: "{{ item }}"
+       classic: true
+     with_list: "{{ param }}"
