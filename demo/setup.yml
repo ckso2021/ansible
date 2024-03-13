@@ -6,6 +6,7 @@
   gather_facts: true
   vars:
     user: user
+    javaVersion: 21
 
   tasks:
     - name: Set timezone to Asia/Taipei
@@ -50,8 +51,8 @@
             - {name: [python3, python3-pip], service: false, prerequisite: false, config: false, final: false, os: false}
             - {name: [python3-dev], service: false, prerequisite: false, config: false, final: false, os: ['Debian']}
             - {name: [python3-devel], service: false, prerequisite: false, config: false, final: false, os: ['RedHat']}
-            - {name: openjdk-21-jdk, service: false, prerequisite: false, config: false, final: false, os: ['Debian']}
-            - {name: java-21-openjdk, service: false, prerequisite: false, config: false, final: false, os: ['RedHat']}
+            - {name: "openjdk-{{ javaVersion }}-jdk", service: false, prerequisite: false, config: false, final: false, os: ['Debian']}
+            - {name: "java-{{ javaVersion }}-openjdk", service: false, prerequisite: false, config: false, final: false, os: ['RedHat']}
             - {name: nginx, service: nginx, prerequisite: false, config: false, final: false, os: false}
             - {name: mongodb-org, service: mongod,
               prerequisite: { name: mongodb, args: "7.0 {{ ansible_distribution_major_version }}", os: false, skipIfExists: "/tmp/ansible-mongodb-prerequisite-completed"},
@@ -81,6 +82,7 @@
             - {name: golang, args: "", skipIfExists: "/usr/local/go/bin/go"}
             - {name: android-studio, args: "2023.1.1.28", skipIfExists: "/opt/android-studio/bin/studio.sh"}
             - {name: vmware, args: "{{ user }}", skipIfExists: "/tmp/ansible-vmware-script-completed"}
+            - {name: tomcat, args: "{{ user }} 10.1.19 {{ javaVersion }}", skipIfExists: "/opt/tomcat/bin/startup.sh"}
 
         - yml: script-as-user
           package:
