@@ -30,7 +30,7 @@ Type=forking
 User=tomcat
 Group=tomcat
 
-Environment="JAVA_HOME=/usr/lib/jvm/java-$3-openjdk-amd64"
+Environment="JAVA_HOME=/usr/lib/jvm/jre-$3-openjdk"
 Environment="CATALINA_PID=/opt/tomcat$version/temp/tomcat.pid"
 Environment="CATALINA_HOME=/opt/tomcat$version"
 Environment="CATALINA_BASE=/opt/tomcat$version"
